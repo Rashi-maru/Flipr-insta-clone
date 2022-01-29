@@ -5,7 +5,7 @@ const {
     IdValidator,
 } = require("../validators/user.validator");
 
-exports.getFriend = async(req, res) => {
+exports.getFriend = async (req, res) => {
     try {
         const { friends: Ids } = req.user;
         const friends = await UserService.getAllFriendsbyid(Ids);
@@ -20,18 +20,20 @@ exports.getFriend = async(req, res) => {
  * @param {Express.Request} req
  * @param {Express.Response} res
  */
-exports.getFriendRequest = async(req, res) => {
+exports.getFriendRequest = async (req, res) => {
     try {
-        const { pagenumber, pagesize } = req.body;
-        if (!pagenumber ||
+        let { pagenumber, pagesize } = req.body;
+        if (
+            !pagenumber ||
             !pagesize ||
             Number.isNaN(pagesize) ||
             Number.isNaN(pagenumber)
         ) {
             return res
                 .status(404)
-                .json({ message: "page no and size of page needed" });
+                .json({ message: "pagenumber and pagesize is required" });
         }
+        pagenumber = Math.max(1, pagenumber);
         const requests = await RequestService.findreceivedbyTypePaginated(
             req.user._id,
             "friendrequest",
@@ -48,18 +50,20 @@ exports.getFriendRequest = async(req, res) => {
  * @param {Express.Request} req
  * @param {Express.Response} res
  */
-exports.getSentFriendRequest = async(req, res) => {
+exports.getSentFriendRequest = async (req, res) => {
     try {
-        const { pagenumber, pagesize } = req.body;
-        if (!pagenumber ||
+        let { pagenumber, pagesize } = req.body;
+        if (
+            !pagenumber ||
             !pagesize ||
             Number.isNaN(pagesize) ||
             Number.isNaN(pagenumber)
         ) {
             return res
                 .status(404)
-                .json({ message: "page no and size of page needed" });
+                .json({ message: "pagenumber and pagesize is required" });
         }
+        pagenumber = Math.max(1, pagenumber);
         const requests = await RequestService.findEmittedbyTypePaginated(
             req.user._id,
             "friendrequest",
@@ -76,29 +80,29 @@ exports.getSentFriendRequest = async(req, res) => {
  * @param {Express.Request} req
  * @param {Express.Response} res
  */
-exports.sendFriendRequest = async(req, res) => {
+exports.sendFriendRequest = async (req, res) => {
     try {
         const { username } = req.params;
         if (!usernameValidator(username)) {
-            return res.status(404).json({ message: "route is not found" });
+            return res.status(404).json({ message: "route not found" });
         }
         const user = await UserService.findOneByUsername(username);
         if (
             req.user.friends
-            .map((user) => user.toString())
-            .includes(user._id.toString())
+                .map((user) => user.toString())
+                .includes(user._id.toString())
         ) {
-            return res.status(400).json({ message: "Oh Look: Already friends!" });
+            return res.status(400).json({ message: "Already friends" });
         }
 
         if (
             req.user.blockedUsers
-            .map((user) => user.toString())
-            .includes(user._id.toString())
+                .map((user) => user.toString())
+                .includes(user._id.toString())
         ) {
             return res
                 .status(400)
-                .json({ message: "Kindly unblock the user and then proceed" });
+                .json({ message: "Please Unblock the user first" });
         }
 
         await RequestService.createOne(req.user._id, user.id, "friendrequest");
@@ -112,12 +116,12 @@ exports.sendFriendRequest = async(req, res) => {
  * @param {Express.Request} req
  * @param {Express.Response} res
  */
-exports.deleteFriendRequest = async(req, res) => {
+exports.deleteFriendRequest = async (req, res) => {
     try {
         const { username } = req.params;
         const user = await UserService.findOneByUsername(username);
         if (!user) {
-            return res.status(404).json({ message: "route is not found" });
+            return res.status(404).json({ message: "route not found" });
         }
         const { deletedCount } = await RequestService.deleteOne(
             req.user._id,
@@ -136,7 +140,7 @@ exports.deleteFriendRequest = async(req, res) => {
  * @param {Express.Request} req
  * @param {Express.Response} res
  */
-exports.acceptRequest = async(req, res) => {
+exports.acceptRequest = async (req, res) => {
     try {
         const { id } = req.params;
         if (!IdValidator(id)) {
@@ -155,7 +159,8 @@ exports.acceptRequest = async(req, res) => {
             );
             if (!done)
                 return res.status(400).json({
-                    message: "make sure user is valid and you have not blocked him",
+                    message:
+                        "make sure user is valid and you have not blocked him",
                 });
             await RequestService.expireOne(id, req.user._id);
             res.status(200).send();
@@ -172,7 +177,7 @@ exports.acceptRequest = async(req, res) => {
  * @param {Express.Request} req
  * @param {Express.Response} res
  */
-exports.rejectRequest = async(req, res) => {
+exports.rejectRequest = async (req, res) => {
     try {
         const { id } = req.params;
         if (!IdValidator(id)) {
@@ -195,7 +200,7 @@ exports.rejectRequest = async(req, res) => {
  * @param {Express.Request} req
  * @param {Express.Response} res
  */
-exports.unfriend = async(req, res) => {
+exports.unfriend = async (req, res) => {
     try {
         const { username } = req.params;
         if (!usernameValidator(username)) {
@@ -216,11 +221,11 @@ exports.unfriend = async(req, res) => {
     }
 };
 
-exports.blockUnblockUser = async(req, res) => {
+exports.blockUnblockUser = async (req, res) => {
     try {
         const { username } = req.params;
         if (!usernameValidator(username))
-            return res.status(404).json({ message: "Oops! Invalid Route" });
+            return res.status(404).json({ message: "Invalid Route" });
         const status = await UserService.blockUnblockUser(
             req.user._id,
             username,
