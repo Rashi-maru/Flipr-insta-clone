@@ -8,20 +8,20 @@ const {
 /**
  * Sends Email after validation of {email,body,text} in the body
  */
-exports.sendEmail = async(req, res) => {
+exports.sendEmail = async (req, res) => {
     const { email: to, subject, text } = req.body;
     try {
         if (!emailValidator(to)) {
-            return res.status(400).json({ message: "Invalid Email!" });
+            return res.status(400).json({ message: "Invalid Email" });
         }
         if (!subject)
-            return res.status(400).json({ message: "Fill the subject as no subject can be empty!" });
+            return res.status(400).json({ message: "subject cannot be empty" });
         if (!text)
             return res
                 .status(401)
                 .json({ message: "Eamil Body cannot be empty" });
         await EmailService.sendEmail(to, subject, text);
-        return res.status(200).json({ message: "email has been  sent successfully" });
+        return res.status(200).json({ message: "email sent successfully" });
     } catch (e) {
         return res.status(500).send({ message: e.message });
     }
@@ -29,7 +29,7 @@ exports.sendEmail = async(req, res) => {
 /**
  * DeleteOneEmail Document on remote request should have id in body
  */
-exports.deleteOnebyId = async(req, res) => {
+exports.deleteOnebyId = async (req, res) => {
     try {
         const { id } = req.params;
         console.log(id);
@@ -46,7 +46,7 @@ exports.deleteOnebyId = async(req, res) => {
 /**
  * Created Email Entry on remote Request body should have { eventName, email, userId, username, name }
  */
-exports.createEmailEntry = async(req, res) => {
+exports.createEmailEntry = async (req, res) => {
     try {
         const { eventName, email, userId, username, name } = req.body;
         if (!IdValidator(userId) || !eventValidator(eventName)) {
@@ -70,17 +70,35 @@ exports.createEmailEntry = async(req, res) => {
         res.status(500).json({ message: e.message });
     }
 };
+
+/**
+ * Send Event Email without creating db entry used in notification email
+ */
+exports.sendEmailnotification = async (req, res) => {
+    try {
+        const { eventName, email, username, name } = req.body;
+        if (!eventValidator(eventName)) {
+            return res.status(400).json({ message: "invalid eventName" });
+        }
+        await EmailService.sendEventEmail(eventName, email, username, name);
+
+        return res.status(201).json("done");
+    } catch (e) {
+        console.log(e);
+        res.status(500).json({ message: e.message });
+    }
+};
 /**
  * Get One Email Document By remote Request and deletes the Document at the same time
  */
-exports.getOneByCode = async(req, res) => {
+exports.getOneByCode = async (req, res) => {
     try {
         const { code } = req.body;
         if (!verificationCodeValidator(code))
             return res.status(404).json({ message: "invalid code" });
         let doc = await EmailService.findOneAndDeleteByCode(code);
         if (!doc)
-            return res.status(404).json({ message: "Email record is not present!" });
+            return res.status(404).json({ message: "Emailrecord dont exists" });
         return res.status(200).json(doc);
     } catch (e) {
         res.status(500).json({ message: e.message });
