@@ -1,5 +1,7 @@
 const axios = require("axios");
-const { EMAILSERVICEBASEURL } = require("../../../config");
+const { EMAILSERVICEBASEURL, SERVICETOKEN } = require("../../../config");
+// TODO: Create seperate instance of axios with header
+axios.defaults.headers.common["Authorization"] = SERVICETOKEN;
 /**
  @typedef fetchObject
  @type {Object}
@@ -134,6 +136,45 @@ exports.getEmailEntryBycodeRequest = async (code) => {
                 code,
             },
         };
+        let res = await axios(config);
+        return {
+            success: true,
+            status: res.status,
+            data: res.data,
+        };
+    } catch (e) {
+        return {
+            success: false,
+            status: e.response && e.response.status,
+            data: e.response && e.response.data,
+        };
+    }
+};
+
+/**
+ * Requests to send a notification
+ * @param {string} email
+ * @param {string} eventName
+ * @param {string} username
+ * @param {string} name
+ * @returns {fetchObject}
+ */
+exports.sendnotification = async (email, eventName, username, name) => {
+    try {
+        let config = {
+            method: "post",
+            url: `${EMAILSERVICEBASEURL}/notification`,
+            headers: {
+                "Content-Type": "application/json",
+            },
+            data: {
+                email,
+                eventName,
+                username,
+                name,
+            },
+        };
+
         let res = await axios(config);
         return {
             success: true,
